@@ -5,7 +5,7 @@ from PIL import Image
 # ===== CONFIG =====
 INPUT_DIR = "frames"
 OUTPUT_FILE = "sprite_sheet.png"
-IMAGE_EXT = ".jpg"      # change to .png if needed
+IMAGE_EXT = ".png"      # change to .png if needed
 COLUMNS = None          # None = auto (recommended)
 PADDING = 0             # pixels between frames
 # ==================
@@ -21,8 +21,10 @@ if not images:
 
 # Open first image to get size
 first_image = Image.open(os.path.join(INPUT_DIR, images[0]))
-frame_width, frame_height = first_image.size
-
+frame_width, frame_height = first_image.size 
+# frame_width = 970,  
+# frame_height = 500
+print(f"✅ Frame size detected: {frame_width}x{frame_height} {first_image.size}")
 total_frames = len(images)
 
 # Auto grid calculation

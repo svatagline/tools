@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/svatagline/sound_recording#readme",
   "dependencies": {
+    "pixi.js": "^8.14.3",
     "qrcode-terminal": "^0.12.0",
     "whatsapp-web.js": "^1.34.2"
   }
