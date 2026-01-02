@@ -59,5 +59,6 @@ coverage.xml
 node_modules/
 .wwebjs_cache/
 .wwebjs_auth/
-
+sprite_sheet/frames
+sprite_sheet/sprite_sheet.png
 
