@@ -5,7 +5,7 @@ from PIL import Image
 # ===== CONFIG =====
 INPUT_DIR = "frames"
 OUTPUT_FILE = "sprite_sheet.png"
-IMAGE_EXT = ".png"      # change to .png if needed
+IMAGE_EXT = ".jpg"      # change to .png if needed
 COLUMNS = None          # None = auto (recommended)
 PADDING = 0             # pixels between frames
 # ==================

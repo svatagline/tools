@@ -3,10 +3,9 @@ import { useEffect, useRef } from "react";
 import { useState } from "react";
 
 export const ANIMATIONS = {
-  IDLE: { start: 0, end: 60, loop: true },
-  TOSS: { start: 61, end: 173, loop: true },
-  HEAD: { start: 174, end: 204, loop: true },
-  TAIL: { start: 205, end: 300, loop: true },
+  COMMON: { start: 0, end: 134 },
+  HEAD: { start: 135, end: 185 },
+  TAIL: { start: 187, end: 239 },
 };
 
 const SpriteCanvas = ({
@@ -14,17 +13,26 @@ const SpriteCanvas = ({
   frameWidth,
   frameHeight,
   columns,
-  fps = 25,
-  animation, // { start, end, loop }
-  onComplete, // callback after non-loop animation
+  fps = 15,
+  animation,
+  onComplete,
+  roundId,
 }) => {
   const canvasRef = useRef(null);
   const frameRef = useRef(animation.start);
-  const lastTimeRef = useRef(0);
+  const lastTimeRef = useRef(null);
+  const rafRef = useRef(null);
+  const animIdRef = useRef(Math.random().toString(36).slice(2, 7));
 
   useEffect(() => {
+    console.log(
+      `%c[ROUND ${roundId}] ▶️ ANIMATION START [${animation.start} → ${animation.end}] (animId=${animIdRef.current})`,
+      "color: orange"
+    );
+
     frameRef.current = animation.start;
-  }, [animation.start]);
+    lastTimeRef.current = null;
+  }, [animation, roundId]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -33,13 +41,19 @@ const SpriteCanvas = ({
     image.src = src;
 
     const frameDuration = 1000 / fps;
-    let rafId;
 
     const animate = (time) => {
+      if (!lastTimeRef.current) lastTimeRef.current = time;
+
       if (time - lastTimeRef.current >= frameDuration) {
+        const frame = frameRef.current;
+
+        console.log(
+          `[ROUND ${roundId}] frame=${frame} animId=${animIdRef.current}`
+        );
+
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        const frame = frameRef.current;
         const col = frame % columns;
         const row = Math.floor(frame / columns);
 
@@ -58,55 +72,102 @@ const SpriteCanvas = ({
         frameRef.current++;
 
         if (frameRef.current > animation.end) {
-          if (animation.loop) {
-            frameRef.current = animation.start;
-          } else {
-            onComplete?.();
-            return;
-          }
+          console.log(`%c[ROUND ${roundId}] ⛔ ANIMATION END`, "color: red");
+
+          cancelAnimationFrame(rafRef.current);
+          onComplete?.();
+          return;
         }
 
         lastTimeRef.current = time;
       }
 
-      rafId = requestAnimationFrame(animate);
+      rafRef.current = requestAnimationFrame(animate);
     };
 
     image.onload = () => {
+      console.log(`%c[ROUND ${roundId}] 🖼 IMAGE LOADED`, "color: gray");
+
       canvas.width = frameWidth;
       canvas.height = frameHeight;
-      rafId = requestAnimationFrame(animate);
+      rafRef.current = requestAnimationFrame(animate);
     };
 
-    return () => cancelAnimationFrame(rafId);
-  }, [src, frameWidth, frameHeight, columns, fps, animation, onComplete]);
+    return () => {
+      console.log(`%c[ROUND ${roundId}] ❌ RAF CLEANUP`, "color: purple");
+      cancelAnimationFrame(rafRef.current);
+    };
+  }, [
+    src,
+    frameWidth,
+    frameHeight,
+    columns,
+    fps,
+    animation,
+    onComplete,
+    roundId,
+  ]);
 
   return <canvas ref={canvasRef} />;
 };
 
-export default function CoinGame() {
-  const [anim, setAnim] = useState(ANIMATIONS.IDLE);
-  const [resultOpt, setResultOpt] = useState("HEAD");
+export default function SpriteSheetPlayer() {
+  const [anim, setAnim] = useState(ANIMATIONS.COMMON);
+  const [tossOption, setTossOption] = useState("HEAD"); // just for demo
+  const roundIdRef = useRef(0);
+  const resultRef = useRef(null);
 
-  setTimeout(() => {
-    const result = resultOpt === "HEAD" ? "TAIL" : "HEAD";
-    setResultOpt(result);
+  const startRound = () => {
+    roundIdRef.current += 1;
+    resultRef.current = null;
 
-    const resultANIMATIONS =
-      result === "HEAD" ? ANIMATIONS.HEAD : ANIMATIONS.TAIL;
+    console.log(
+      `%c[ROUND ${roundIdRef.current}] START → COMMON`,
+      "color: cyan"
+    );
 
-    // 🔥 SWITCH ANIMATION MID-WAY
-    console.log("Change animation to", result);
-    setAnim(resultANIMATIONS);
-  }, 10000);
+    setAnim({ ...ANIMATIONS.COMMON });
+  };
+
+  useEffect(() => {
+    startRound();
+  }, []);
+
+  const handleCommonComplete = () => {
+    setTossOption(tossOption === "HEAD" ? "TAIL" : "HEAD"); // just for demo
+    const result = tossOption; //Math.random() < 0.5 ? "HEAD" : "TAIL";
+    resultRef.current = result;
+
+    console.log(
+      `%c[ROUND ${roundIdRef.current}] RESULT = ${result}`,
+      "color: yellow"
+    );
+
+    setAnim({ ...(result === "HEAD" ? ANIMATIONS.HEAD : ANIMATIONS.TAIL) });
+  };
+
+  const handleResultComplete = () => {
+    console.log(
+      `%c[ROUND ${roundIdRef.current}] END (${resultRef.current})`,
+      "color: lime"
+    );
+
+    setTimeout(startRound, 500); // next round
+  };
 
   return (
     <SpriteCanvas
       src="/sprite_sheet.png"
-      frameWidth={486}
-      frameHeight={250}
-      columns={18}
+      frameWidth={306}
+      frameHeight={208}
+      columns={16}
       animation={anim}
+      roundId={roundIdRef.current}
+      onComplete={
+        anim.start === ANIMATIONS.COMMON.start
+          ? handleCommonComplete
+          : handleResultComplete
+      }
     />
   );
 }
